@@ -1,25 +1,22 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import { Button } from 'antd';
 import './App.css';
+import Detail from "./components/Detail";
+import TasksView from './components/TasksView';
 
-function App() {
+const App = () => {
+  const [isVisible, setIsvisible] = useState(false);
+  const openDetail = () => {
+    setIsvisible(true)
+  }
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Button type="primary" onClick={openDetail}>Show Modal</Button>
+      <Detail isVisible={isVisible} setIsvisible={setIsvisible} />
+      <h2>Header test</h2>
+      <TasksView />
     </div>
-  );
-}
+  )
+};
 
 export default App;
