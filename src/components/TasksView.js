@@ -1,35 +1,210 @@
-import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core';
 import { Col, Row } from 'antd';
-import { useState } from 'react';
 import TaskTag from './TaskTag';
 import PriorityTab from './PriorityTab';
-import { nanoid } from 'nanoid';
-import Item from 'antd/lib/list/Item';
+import React, { useState } from "react";
+import { DndContext, DragOverlay, closestCenter, } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
+
+
 
 const TasksView = (props) => {
-    const [parent, setParent] = useState(null);
-    const [items] = useState(['1', '2', '3', '4', '5']);
+    const [items, setItems] = useState(
+        {
+            low: [
+                {
+                    id: '1L',
+                    value: 'testLow1'
+                },
+                {
+                    id: '2L',
+                    value: 'testLow2'
+                },
+                {
+                    id: '3L',
+                    value: 'testLow3'
+                }
+            ],
+            normal: [
+                {
+                    id: '1N',
+                    value: 'testNormal1'
+                },
+                {
+                    id: '2N',
+                    value: 'testNormal2'
+                },
+                {
+                    id: '3N',
+                    value: 'testNormal3'
+                }
+            ],
+            high: [
+                {
+                    id: '1H',
+                    value: 'testHigh1'
+                },
+                {
+                    id: '2H',
+                    value: 'testHigh2'
+                },
+                {
+                    id: '3H',
+                    value: 'testHigh3'
+                }
+            ],
+            doing: [
+                {
+                    id: '1D',
+                    value: 'testDoing1'
+                },
+                {
+                    id: '2D',
+                    value: 'testDoing2'
+                },
+                {
+                    id: '3D',
+                    value: 'testDoing3'
+                }
+            ],
+            done: []
+        }
+    );
+
+
     const [activeId, setActiveId] = useState(null);
 
-    function handleDragStart(event) {
-        setActiveId(event.active.id);
-    }
+    const defaultAnnouncements = {
+        onDragStart(id) {
+            console.log(`Picked up draggable item ${id}.`);
+        },
+        onDragOver(id, overId) {
+            if (overId) {
+                console.log(
+                    `Draggable item ${id} was moved over droppable area ${overId}.`
+                );
+                return;
+            }
 
-    function handleDragEnd() {
+            console.log(`Draggable item ${id} is no longer over a droppable area.`);
+        },
+        onDragEnd(id, overId) {
+            if (overId) {
+                console.log(
+                    `Draggable item ${id} was dropped over droppable area ${overId}`
+                );
+                return;
+            }
+
+            console.log(`Draggable item ${id} was dropped.`);
+        },
+        onDragCancel(id) {
+            console.log(`Dragging was cancelled. Draggable item ${id} was dropped.`);
+        }
+    };
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        const { id } = active;
+        const { id: overId } = over;
+
+        const activeContainer = findContainer(id);
+        const overContainer = findContainer(overId);
+
+        if (
+            !activeContainer ||
+            !overContainer ||
+            activeContainer !== overContainer
+        ) {
+            return;
+        }
+
+        const activeIndex = items[activeContainer].map(item => item.id).indexOf(active.id);
+        const overIndex = items[overContainer].map(item => item.id).indexOf(overId);
+
+        if (activeIndex !== overIndex) {
+            setItems((items) => ({
+                ...items,
+                [overContainer]: arrayMove(items[overContainer], activeIndex, overIndex)
+            }));
+        }
+
         setActiveId(null);
     }
 
-    function handleDragEnd({ over }) {
-        setParent(over ? over.id : null);
+    const handleDragOver = (event) => {
+        const { active, over, draggingRect } = event;
+        const { id } = active;
+        const { id: overId } = over;
+
+        // Find the containers
+        const activeContainer = findContainer(id);
+        const overContainer = findContainer(overId);
+
+        if (
+            !activeContainer ||
+            !overContainer ||
+            activeContainer === overContainer
+        ) {
+
+            return;
+        }
+
+        setItems((prev) => {
+            const activeItems = prev[activeContainer];
+            const overItems = prev[overContainer];
+
+            // Find the indexes for the items
+            const activeIndex = activeItems.map(item => item.id).indexOf(id);
+            const overIndex = overItems.map(item => item.id).indexOf(overId);
+            let newIndex;
+            if (overId in prev) {
+                // We're at the root droppable of a container
+                newIndex = overItems.length + 1;
+            } else {
+                const isBelowLastItem =
+                    over &&
+                        overIndex === overItems.length - 1 &&
+                        draggingRect ? draggingRect.offsetTop : -Infinity > over.rect.offsetTop + over.rect.height;
+
+                const modifier = isBelowLastItem ? 1 : 0;
+
+                newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
+
+            }
+
+            return {
+                ...prev,
+                [activeContainer]: [
+                    ...prev[activeContainer].filter((item) => item.id !== active.id)
+                ],
+
+                [overContainer]: [
+                    ...prev[overContainer].slice(0, newIndex),
+                    items[activeContainer][activeIndex],
+                    ...prev[overContainer].slice(newIndex, prev[overContainer].length)
+                ]
+            };
+        });
+    }
+
+    const findContainer = (id) => {
+        if (id in items) {
+            return id;
+        }
+        return Object.keys(items).find(key => (items[key].map(item => item ? item.id : null)).includes(id))
+
+    }
+
+    const handleDragStart = (event) => {
+        const { active } = event;
+        const { id } = active;
+
+        setActiveId(id);
     }
 
 
-    const draggable = (
-        <TaskTag id={nanoid()} />
-    )
-
-
     return (
+
         <div
             style={{
                 margin: 'auto',
@@ -38,9 +213,11 @@ const TasksView = (props) => {
             }}
         >
             <DndContext
-                onDragEnd={handleDragEnd}
+                announcements={defaultAnnouncements}
+                collisionDetection={closestCenter}
                 onDragStart={handleDragStart}
-                closestCenter
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
             >
                 <Row
                     style={{
@@ -58,44 +235,26 @@ const TasksView = (props) => {
                         justifyContent: 'space-around',
                     }}
                 >
+                    <Col span={4}>
+                        <PriorityTab id="low" items={items.low} />
+                    </Col>
+                    <Col span={4}>
+                        <PriorityTab id="normal" items={items.normal} />
+                    </Col>
+                    <Col span={4}>
+                        <PriorityTab id="high" items={items.high} />
+                    </Col>
+                    <Col span={4}>
+                        <PriorityTab id="doing" items={items.doing} />
+                    </Col>
+                    <Col span={4}>
+                        <PriorityTab id="done" items={items.done} />
+                    </Col>
 
-                    <Col span={4}>
-
-                        <PriorityTab id='low'>
-                            {/* {parent === 'low' ? draggable : 'Drop here'} */}
-                            {items.map(id =>
-                                <TaskTag key={id} id={id}>
-                                    {id}
-                                </TaskTag>
-                            )}
-                        </PriorityTab>
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id='normal'>
-                            {/* {parent === "normal" ? draggable : 'Drop here'} */}
-                        </PriorityTab>
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id='high'>
-                            {/* {parent === "high" ? draggable : 'Drop here'} */}
-                        </PriorityTab>
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id='doing'>
-                            {/* {parent === "doing" ? draggable : 'Drop here'} */}
-                        </PriorityTab>
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id='done'>
-                            {/* {parent === "done" ? draggable : 'Drop here'} */}
-                        </PriorityTab>
-                    </Col>
                 </Row >
-                <DragOverlay>
-                    {activeId ? (
-                        <Item value={`Item ${activeId}`} />
-                    ) : null}
-                </DragOverlay>
+
+
+                <DragOverlay>{activeId ? <TaskTag id={activeId} /> : null}</DragOverlay>
             </DndContext>
         </div >
     )

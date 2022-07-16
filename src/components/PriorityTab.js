@@ -1,26 +1,35 @@
+import React from "react";
 import { useDroppable } from "@dnd-kit/core";
-const PriorityTab = (props) => {
-    const { isOver, setNodeRef } = useDroppable({
-        id: props.id,
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import TaskTag from "./TaskTag";
+
+const containerStyle = {
+    background: "#dadada",
+    padding: 10,
+    margin: 10,
+    flex: 1
+};
+
+const Container = (props) => {
+    const { id, items } = props;
+
+    const { setNodeRef } = useDroppable({
+        id
     });
 
-    const style = {
-        color: isOver ? 'green' : 'gray',
-        // opacity: isOver ? 1 : 0.5,
-        border: '2px solid red',
-        height: '100%',
-        minHeight: '600px',
-        width: '100%',
-        backgroundColor: 'beige'
-
-    };
-
-
     return (
-        <div
-            ref={setNodeRef} style={style}>
-            {props.children}
-        </div>
+        <SortableContext
+            id={id}
+            items={items}
+            strategy={verticalListSortingStrategy}
+        >
+            <div ref={setNodeRef} style={containerStyle}>
+                {/* {console.log(items)} */}
+                {items.map((item) => (
+                    item ? <TaskTag key={item.id} id={item.id} value={item.value} /> : null
+                ))}
+            </div>
+        </SortableContext>
     );
 }
-export default PriorityTab;
+export default Container;
