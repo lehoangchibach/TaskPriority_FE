@@ -1,77 +1,61 @@
 import { Col, Row } from 'antd';
 import TaskTag from './TaskTag';
 import PriorityTab from './PriorityTab';
-import React, { useState } from "react";
-import { DndContext, DragOverlay, closestCenter, } from "@dnd-kit/core";
+import React, { useCallback, useEffect, useState } from "react";
+import { DndContext, DragOverlay, closestCenter, useSensor, MouseSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import { getAllTaskByUser, saveTask } from '../services/TaskAPI';
+import Detail from './Detail';
 
 
 
 const TasksView = (props) => {
-    const [items, setItems] = useState(
-        {
-            low: [
-                {
-                    id: '1L',
-                    value: 'testLow1'
-                },
-                {
-                    id: '2L',
-                    value: 'testLow2'
-                },
-                {
-                    id: '3L',
-                    value: 'testLow3'
-                }
-            ],
-            normal: [
-                {
-                    id: '1N',
-                    value: 'testNormal1'
-                },
-                {
-                    id: '2N',
-                    value: 'testNormal2'
-                },
-                {
-                    id: '3N',
-                    value: 'testNormal3'
-                }
-            ],
-            high: [
-                {
-                    id: '1H',
-                    value: 'testHigh1'
-                },
-                {
-                    id: '2H',
-                    value: 'testHigh2'
-                },
-                {
-                    id: '3H',
-                    value: 'testHigh3'
-                }
-            ],
-            doing: [
-                {
-                    id: '1D',
-                    value: 'testDoing1'
-                },
-                {
-                    id: '2D',
-                    value: 'testDoing2'
-                },
-                {
-                    id: '3D',
-                    value: 'testDoing3'
-                }
-            ],
-            done: []
-        }
-    );
+    const [isVisible, setIsvisible] = useState(false);
+    const [activeId, setActiveId] = useState(null)
+    const [activeTask, setActiveTask] = useState(null)
+    const [items, setItems] = useState({
+        'low': [],
+        'normal': [],
+        'high': [],
+        'doing': [],
+        'done': []
+    });
+    const [task, setTask] = useState({
+        owner: 'huyenpham',
+        title: null,
+        summary: null,
+        deadlineDate: null,
+        deadlineTime: null,
+        detail: null,
+        priority: null,
+        taskId: null,
+    });
 
+    useEffect(() => {
+        getItemsList()
+    }, [task])
 
-    const [activeId, setActiveId] = useState(null);
+    const getItemsList = () => {
+        getAllTaskByUser({ userName: "huyenpham" }).then(response => {
+            setItems(response.data)
+        })
+    }
+
+    const handleSaveTask = useCallback((values) => {
+        console.log('values', values);
+        const payload = ({ ...task, ...values })
+        console.log('payload', payload);
+        saveTask({ data: payload }).then(() => {
+            setTask(payload)
+        })
+    }, [task])
+
+    const mouseSensor = useSensor(MouseSensor, {
+        // Require the mouse to move by 10 pixels before activating
+        activationConstraint: {
+            distance: 10,
+        },
+    });
 
     const defaultAnnouncements = {
         onDragStart(id) {
@@ -103,6 +87,8 @@ const TasksView = (props) => {
     };
 
     const handleDragEnd = (event) => {
+        console.log('Drag End', event);
+        console.log('activeId', activeId);
         const { active, over } = event;
         const { id } = active;
         const { id: overId } = over;
@@ -118,8 +104,8 @@ const TasksView = (props) => {
             return;
         }
 
-        const activeIndex = items[activeContainer].map(item => item.id).indexOf(active.id);
-        const overIndex = items[overContainer].map(item => item.id).indexOf(overId);
+        const activeIndex = items[activeContainer].map(item => item.taskId).indexOf(active.id);
+        const overIndex = items[overContainer].map(item => item.taskId).indexOf(overId);
 
         if (activeIndex !== overIndex) {
             setItems((items) => ({
@@ -127,6 +113,10 @@ const TasksView = (props) => {
                 [overContainer]: arrayMove(items[overContainer], activeIndex, overIndex)
             }));
         }
+
+        let currentItem = items[overContainer].find(each => each.taskId === activeId)
+        currentItem.priority = overContainer
+        saveTask({ data: currentItem })
 
         setActiveId(null);
     }
@@ -154,8 +144,8 @@ const TasksView = (props) => {
             const overItems = prev[overContainer];
 
             // Find the indexes for the items
-            const activeIndex = activeItems.map(item => item.id).indexOf(id);
-            const overIndex = overItems.map(item => item.id).indexOf(overId);
+            const activeIndex = activeItems.map(item => item.taskId).indexOf(id);
+            const overIndex = overItems.map(item => item.taskId).indexOf(overId);
             let newIndex;
             if (overId in prev) {
                 // We're at the root droppable of a container
@@ -175,7 +165,7 @@ const TasksView = (props) => {
             return {
                 ...prev,
                 [activeContainer]: [
-                    ...prev[activeContainer].filter((item) => item.id !== active.id)
+                    ...prev[activeContainer].filter((item) => item.taskId !== active.id)
                 ],
 
                 [overContainer]: [
@@ -191,33 +181,48 @@ const TasksView = (props) => {
         if (id in items) {
             return id;
         }
-        return Object.keys(items).find(key => (items[key].map(item => item ? item.id : null)).includes(id))
+        return Object.keys(items).find(key => (items[key].map(item => item ? item.taskId : null)).includes(id))
 
     }
 
     const handleDragStart = (event) => {
+        console.log("start Drag", event);
         const { active } = event;
         const { id } = active;
+        const currentContainer = event.active.data.current.sortable.containerId
+        const currentTask = items[currentContainer].find(each => each.taskId === id)
 
+        console.log('currentContainer', currentContainer);
+        console.log('currentTask', currentTask);
+
+        setActiveTask(currentTask)
         setActiveId(id);
     }
-
+    function openDetail(id) {
+        console.log(id);
+        let task;
+        Object.keys(items).forEach(key => {
+            items[key].forEach(item => item.taskId === id ? task = item : null)
+        })
+        setTask(task)
+        setIsvisible(true)
+    }
 
     return (
-
-        <div
-            style={{
-                margin: 'auto',
-                border: '1px solid blue',
-                justifyContent: 'center',
-            }}
+        <div style={{
+            margin: 'auto',
+            border: '1px solid blue',
+            justifyContent: 'center',
+        }}
         >
+            <Detail isVisible={isVisible} setIsvisible={setIsvisible} task={task} setTask={setTask} handleSaveTask={handleSaveTask} />
             <DndContext
                 announcements={defaultAnnouncements}
                 collisionDetection={closestCenter}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
+                sensors={[mouseSensor]}
             >
                 <Row
                     style={{
@@ -236,25 +241,25 @@ const TasksView = (props) => {
                     }}
                 >
                     <Col span={4}>
-                        <PriorityTab id="low" items={items.low} />
+                        <PriorityTab id="low" items={items.low} onClick={openDetail} />
                     </Col>
                     <Col span={4}>
-                        <PriorityTab id="normal" items={items.normal} />
+                        <PriorityTab id="normal" items={items.normal} onClick={openDetail} />
                     </Col>
                     <Col span={4}>
-                        <PriorityTab id="high" items={items.high} />
+                        <PriorityTab id="high" items={items.high} onClick={openDetail} />
                     </Col>
                     <Col span={4}>
-                        <PriorityTab id="doing" items={items.doing} />
+                        <PriorityTab id="doing" items={items.doing} onClick={openDetail} />
                     </Col>
                     <Col span={4}>
-                        <PriorityTab id="done" items={items.done} />
+                        <PriorityTab id="done" items={items.done} onClick={openDetail} />
                     </Col>
 
                 </Row >
 
 
-                <DragOverlay>{activeId ? <TaskTag id={activeId} /> : null}</DragOverlay>
+                <DragOverlay>{activeId ? <TaskTag id={activeId} task={activeTask} /> : null}</DragOverlay>
             </DndContext>
         </div >
     )

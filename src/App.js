@@ -13,7 +13,7 @@ const App = () => {
   return (
     <div className="App">
       <DndContext>
-        <Button type="primary" onClick={openDetail}>Show Modal</Button>
+        <Button type="primary" onClick={openDetail}>Create Task</Button>
         <Detail isVisible={isVisible} setIsvisible={setIsvisible} />
         <h2>Header test</h2>
         <TasksView />

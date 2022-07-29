@@ -26,7 +26,7 @@ const Container = (props) => {
             <div ref={setNodeRef} style={containerStyle}>
                 {/* {console.log(items)} */}
                 {items.map((item) => (
-                    item ? <TaskTag key={item.id} id={item.id} value={item.value} /> : null
+                    item ? <TaskTag key={item.taskId} id={item.taskId} value={item.title} task={item} onClick={props.onClick} /> : null
                 ))}
             </div>
         </SortableContext>
