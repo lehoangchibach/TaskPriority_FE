@@ -1,17 +1,17 @@
-import { Col, Row } from 'antd';
+import { Button, Col, Row } from 'antd';
 import TaskTag from './TaskTag';
 import PriorityTab from './PriorityTab';
 import React, { useCallback, useEffect, useState } from "react";
 import { DndContext, DragOverlay, closestCenter, useSensor, MouseSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { getAllTaskByUser, saveTask } from '../services/TaskAPI';
+import { getAllTaskByUser, saveTask, createTask, deleteTask } from '../services/TaskAPI';
 import Detail from './Detail';
+import moment from 'moment';
 
 
 
 const TasksView = (props) => {
-    const [isVisible, setIsvisible] = useState(false);
-    const [activeId, setActiveId] = useState(null)
+    const [isVisibleDetail, setIsVisibleDetail] = useState(false);
     const [activeTask, setActiveTask] = useState(null)
     const [items, setItems] = useState({
         'low': [],
@@ -20,7 +20,24 @@ const TasksView = (props) => {
         'doing': [],
         'done': []
     });
+    const mouseSensor = useSensor(MouseSensor, {
+        // Require the mouse to move by 10 pixels before activating
+        activationConstraint: {
+            distance: 10,
+        },
+    });
     const [task, setTask] = useState({
+        owner: 'huyenpham',
+        title: null,
+        summary: null,
+        deadlineDate: null,
+        deadlineTime: null,
+        detail: null,
+        priority: null,
+        taskId: null,
+    });
+    const [isVisibleCreateTask, setIsVisibleCreateTask] = useState(false);
+    const [newTask, setNewTask] = useState({
         owner: 'huyenpham',
         title: null,
         summary: null,
@@ -33,62 +50,65 @@ const TasksView = (props) => {
 
     useEffect(() => {
         getItemsList()
-    }, [task])
+    }, [task, newTask])
 
     const getItemsList = () => {
         getAllTaskByUser({ userName: "huyenpham" }).then(response => {
+            Object.keys(response.data).forEach(key => {
+                response.data[key].forEach(task => {
+                    if (task.deadlineTime) {
+                        let time = moment.utc(task.deadlineTime, 'hh:mm:ss').local()
+                        task.deadlineTime = time
+                    }
+                    if (task.deadlineDate) {
+                        let date = moment.utc(task.deadlineDate, 'YYYY-MM-DD')
+                        task.deadlineDate = date
+                    }
+
+                })
+            })
+
+
             setItems(response.data)
         })
     }
 
+    const handleCreateTask = (values) => {
+        const payload = ({ ...newTask, ...values })
+        createTask({ data: payload }).then(() => {
+            setNewTask({
+                owner: 'huyenpham',
+                title: null,
+                summary: null,
+                deadlineDate: null,
+                deadlineTime: null,
+                detail: null,
+                priority: null,
+                taskId: null
+            })
+        })
+        setIsVisibleCreateTask(false)
+    }
+
     const handleSaveTask = useCallback((values) => {
-        console.log('values', values);
         const payload = ({ ...task, ...values })
         console.log('payload', payload);
+
+
         saveTask({ data: payload }).then(() => {
             setTask(payload)
         })
+        setIsVisibleDetail(false)
     }, [task])
 
-    const mouseSensor = useSensor(MouseSensor, {
-        // Require the mouse to move by 10 pixels before activating
-        activationConstraint: {
-            distance: 10,
-        },
-    });
-
-    const defaultAnnouncements = {
-        onDragStart(id) {
-            console.log(`Picked up draggable item ${id}.`);
-        },
-        onDragOver(id, overId) {
-            if (overId) {
-                console.log(
-                    `Draggable item ${id} was moved over droppable area ${overId}.`
-                );
-                return;
-            }
-
-            console.log(`Draggable item ${id} is no longer over a droppable area.`);
-        },
-        onDragEnd(id, overId) {
-            if (overId) {
-                console.log(
-                    `Draggable item ${id} was dropped over droppable area ${overId}`
-                );
-                return;
-            }
-
-            console.log(`Draggable item ${id} was dropped.`);
-        },
-        onDragCancel(id) {
-            console.log(`Dragging was cancelled. Draggable item ${id} was dropped.`);
-        }
-    };
+    const handleDelete = () => {
+        deleteTask({ taskId: task.taskId }).then(() => {
+            setTask(null)
+        })
+        setIsVisibleDetail(false)
+    }
 
     const handleDragEnd = (event) => {
-        console.log('Drag End', event);
-        console.log('activeId', activeId);
         const { active, over } = event;
         const { id } = active;
         const { id: overId } = over;
@@ -114,11 +134,11 @@ const TasksView = (props) => {
             }));
         }
 
-        let currentItem = items[overContainer].find(each => each.taskId === activeId)
+        let currentItem = items[overContainer].find(each => each.taskId === activeTask.taskId)
         currentItem.priority = overContainer
         saveTask({ data: currentItem })
 
-        setActiveId(null);
+        setActiveTask(null)
     }
 
     const handleDragOver = (event) => {
@@ -177,6 +197,16 @@ const TasksView = (props) => {
         });
     }
 
+    const handleDragStart = (event) => {
+        const { active } = event;
+        const { id } = active;
+        const currentContainer = event.active.data.current.sortable.containerId
+        const currentTask = items[currentContainer].find(each => each.taskId === id)
+
+
+        setActiveTask(currentTask)
+    }
+
     const findContainer = (id) => {
         if (id in items) {
             return id;
@@ -185,28 +215,20 @@ const TasksView = (props) => {
 
     }
 
-    const handleDragStart = (event) => {
-        console.log("start Drag", event);
-        const { active } = event;
-        const { id } = active;
-        const currentContainer = event.active.data.current.sortable.containerId
-        const currentTask = items[currentContainer].find(each => each.taskId === id)
-
-        console.log('currentContainer', currentContainer);
-        console.log('currentTask', currentTask);
-
-        setActiveTask(currentTask)
-        setActiveId(id);
-    }
-    function openDetail(id) {
-        console.log(id);
+    const openDetail = (id) => {
         let task;
         Object.keys(items).forEach(key => {
             items[key].forEach(item => item.taskId === id ? task = item : null)
         })
+        console.log('openDetail', task);
         setTask(task)
-        setIsvisible(true)
+        setIsVisibleDetail(true)
     }
+
+    const openCreateTask = () => {
+        setIsVisibleCreateTask(true)
+    }
+
 
     return (
         <div style={{
@@ -215,9 +237,11 @@ const TasksView = (props) => {
             justifyContent: 'center',
         }}
         >
-            <Detail isVisible={isVisible} setIsvisible={setIsvisible} task={task} setTask={setTask} handleSaveTask={handleSaveTask} />
+            <Button type="primary" onClick={openCreateTask}>Create Task</Button>
+            <Detail isVisible={isVisibleCreateTask} setIsvisible={setIsVisibleCreateTask} task={newTask} setTask={setNewTask} handleSaveTask={handleCreateTask} />
+
+            <Detail isVisible={isVisibleDetail} setIsvisible={setIsVisibleDetail} task={task} setTask={setTask} handleSaveTask={handleSaveTask} handleDelete={handleDelete} />
             <DndContext
-                announcements={defaultAnnouncements}
                 collisionDetection={closestCenter}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
@@ -227,6 +251,8 @@ const TasksView = (props) => {
                 <Row
                     style={{
                         justifyContent: 'space-around',
+                        fontWeight: 500,
+                        fontSize: "initial",
                     }}
                 >
                     <Col span={4}>Low Priority</Col>
@@ -259,7 +285,7 @@ const TasksView = (props) => {
                 </Row >
 
 
-                <DragOverlay>{activeId ? <TaskTag id={activeId} task={activeTask} /> : null}</DragOverlay>
+                <DragOverlay>{activeTask ? <TaskTag task={activeTask} /> : null}</DragOverlay>
             </DndContext>
         </div >
     )

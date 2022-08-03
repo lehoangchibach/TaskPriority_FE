@@ -3,6 +3,7 @@ import { SaveOutlined, DeleteOutlined } from '@ant-design/icons';
 import TextArea from "antd/lib/input/TextArea";
 import Modal from "antd/lib/modal/Modal";
 import { useEffect } from "react";
+import moment from "moment";
 const Detail = (props) => {
     const { Option } = Select;
     let isVisible = props.isVisible;
@@ -10,16 +11,21 @@ const Detail = (props) => {
     const task = props.task
     const [form] = Form.useForm()
     const handleSaveTask = props.handleSaveTask
+    const handleDelete = props.handleDelete
+
+    const timeFormat = 'hh:mm:ss a'
 
     useEffect(() => {
         form.resetFields()
     })
 
-    const handleDelete = () => {
-        setIsvisible(false)
-    }
     const handleCancel = () => {
         setIsvisible(false)
+    }
+
+    const showDeleteButton = () => {
+        if (!handleDelete) { return true }
+        return false
     }
 
     return (
@@ -76,15 +82,48 @@ const Detail = (props) => {
 
                         <Form.Item
                             name={'deadlineTime'}
-                            label={'Time'}>
-                            <TimePicker
-                                value='deadlineTime'></TimePicker>
+                            label={'Time'}
+                            rules={[
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (!value) { return Promise.resolve() }
+                                        let time = value.format("hh:mm:ss a")
+                                        time = moment(time, "hh:mm:ss a").local()
+                                        let now = moment().local()
+                                        console.log(time);
+
+                                        if (now.isBefore(getFieldValue('deadlineDate'))) {
+                                            return Promise.resolve();
+                                        }
+                                        if (now.isBefore(time)) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(new Error('The time must be later than now!'));
+                                    },
+                                })
+                            ]}
+                        >
+                            <TimePicker format={timeFormat} placeholder='deadlineTime'></TimePicker>
                         </Form.Item>
+
                         <Form.Item
                             name={'deadlineDate'}
-                            label={'Date'}>
+                            label={'Date'}
+                            rules={[
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (!value) { return Promise.resolve() }
+                                        let now = moment().local()
+                                        if (now.isBefore(value)) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(new Error('The date must be later than today!'));
+                                    },
+                                })
+                            ]}
+                        >
                             <DatePicker
-                                value='deadlineDate'
+                                placeholder='deadlineDate'
                             ></DatePicker>
                         </Form.Item>
 
@@ -119,6 +158,7 @@ const Detail = (props) => {
                             }}>
                             <Space>
                                 <Button
+                                    disabled={showDeleteButton()}
                                     type="danger"
                                     icon={<DeleteOutlined />}
                                     style={{ borderRadius: 5 }}
@@ -130,7 +170,6 @@ const Detail = (props) => {
                                     icon={<SaveOutlined />}
                                     style={{ borderRadius: 5 }}
                                     htmlType="submit"
-                                // onClick={handleSave}
                                 >Save
                                 </Button>
                             </Space>

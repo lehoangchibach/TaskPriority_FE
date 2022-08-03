@@ -10,7 +10,7 @@ const containerStyle = {
     flex: 1
 };
 
-const Container = (props) => {
+const PriorityTab = (props) => {
     const { id, items } = props;
 
     const { setNodeRef } = useDroppable({
@@ -26,10 +26,10 @@ const Container = (props) => {
             <div ref={setNodeRef} style={containerStyle}>
                 {/* {console.log(items)} */}
                 {items.map((item) => (
-                    item ? <TaskTag key={item.taskId} id={item.taskId} value={item.title} task={item} onClick={props.onClick} /> : null
+                    item ? <TaskTag key={item.taskId} task={item} onClick={props.onClick} /> : null
                 ))}
             </div>
         </SortableContext>
     );
 }
-export default Container;
+export default PriorityTab;
