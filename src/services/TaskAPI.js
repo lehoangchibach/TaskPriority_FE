@@ -1,19 +1,21 @@
 import axios from "axios";
 
+// const server = 'http://127.0.0.1:8000'
+const server = 'https://taskpriority-be.herokuapp.com'
 
 export const getAllTaskByUser = (props) => {
-    return axios.get(`http://127.0.0.1:8000/task/getAllByUser/${props.userName}`)
+    return axios.get(`${server}/task/getAllByUser/${props.userName}`)
 }
 
 
 export const saveTask = (props) => {
-    return axios.put(`http://127.0.0.1:8000/task/`, props.data)
+    return axios.put(`${server}/task/`, props.data)
 }
 
 export const createTask = (props) => {
-    return axios.post(`http://127.0.0.1:8000/task/`, props.data)
+    return axios.post(`${server}/task/`, props.data)
 }
 
 export const deleteTask = (props) => {
-    return axios.delete(`http://127.0.0.1:8000/task/${props.taskId}`)
+    return axios.delete(`${server}/task/${props.taskId}`)
 }
