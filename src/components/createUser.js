@@ -3,14 +3,6 @@ import { Button, Form, Input } from "antd";
 
 const CreateUser = () => {
     const onFinish = (values) => {
-        console.log(values);
-        // createUser({ data: values }).then(response => {
-        //     console.log(response.data);
-        //     if (response.data['userName']) {
-        //         setToken({ data: response.data })
-        //     } else { alert(response.data) }
-        // })
-
     };
 
     return (
