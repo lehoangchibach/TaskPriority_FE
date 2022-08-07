@@ -2,7 +2,7 @@ import { Button, Col, Row } from 'antd';
 import TaskTag from './TaskTag';
 import PriorityTab from './PriorityTab';
 import React, { useCallback, useEffect, useState } from "react";
-import { DndContext, DragOverlay, closestCenter, useSensor, MouseSensor } from "@dnd-kit/core";
+import { DndContext, DragOverlay, closestCenter, useSensor, MouseSensor, TouchSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { getAllTaskByUser, saveTask, createTask, deleteTask } from '../services/TaskAPI';
 import Detail from './Detail';
@@ -11,6 +11,8 @@ import moment from 'moment';
 
 
 const TasksView = (props) => {
+    const token = props.token
+    const userName = token.userName
     const [isVisibleDetail, setIsVisibleDetail] = useState(false);
     const [activeTask, setActiveTask] = useState(null)
     const [items, setItems] = useState({
@@ -26,8 +28,14 @@ const TasksView = (props) => {
             distance: 10,
         },
     });
+    const touchSensor = useSensor(TouchSensor, {
+        // Require the touch to move by 10 pixels before activating
+        activationConstraint: {
+            distance: 10,
+        },
+    })
     const [task, setTask] = useState({
-        owner: 'huyenpham',
+        owner: userName,
         title: null,
         summary: null,
         deadlineDate: null,
@@ -38,7 +46,7 @@ const TasksView = (props) => {
     });
     const [isVisibleCreateTask, setIsVisibleCreateTask] = useState(false);
     const [newTask, setNewTask] = useState({
-        owner: 'huyenpham',
+        owner: userName,
         title: null,
         summary: null,
         deadlineDate: null,
@@ -48,12 +56,8 @@ const TasksView = (props) => {
         taskId: null,
     });
 
-    useEffect(() => {
-        getItemsList()
-    }, [task, newTask])
-
-    const getItemsList = () => {
-        getAllTaskByUser({ userName: "huyenpham" }).then(response => {
+    const getItemsList = useCallback((values) => {
+        getAllTaskByUser({ userName: userName }).then(response => {
             Object.keys(response.data).forEach(key => {
                 response.data[key].forEach(task => {
                     if (task.deadlineTime) {
@@ -71,13 +75,17 @@ const TasksView = (props) => {
 
             setItems(response.data)
         })
-    }
+    }, [userName])
+
+    useEffect(() => {
+        getItemsList()
+    }, [task, newTask, getItemsList])
 
     const handleCreateTask = (values) => {
         const payload = ({ ...newTask, ...values })
         createTask({ data: payload }).then(() => {
             setNewTask({
-                owner: 'huyenpham',
+                owner: userName,
                 title: null,
                 summary: null,
                 deadlineDate: null,
@@ -226,6 +234,7 @@ const TasksView = (props) => {
     }
 
     const openCreateTask = () => {
+        console.log('userName', token);
         setIsVisibleCreateTask(true)
     }
 
@@ -246,7 +255,7 @@ const TasksView = (props) => {
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
-                sensors={[mouseSensor]}
+                sensors={[mouseSensor, touchSensor]}
             >
                 <Row
                     style={{

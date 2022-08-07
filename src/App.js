@@ -1,15 +1,22 @@
 import React from 'react';
 import './App.css';
 import TasksView from './components/TasksView';
-import { DndContext } from '@dnd-kit/core';
+import Login from './components/Login';
+import { Route, Routes } from 'react-router-dom';
+import useToken from './components/useToken';
 
 const App = () => {
+  const { token, setToken } = useToken()
+  if (!token) {
+    return <Login setToken={setToken} />
+  }
+
+
   return (
     <div className="App">
-      <DndContext>
-        <h2>Header test</h2>
-        <TasksView />
-      </DndContext>
+      <Routes>
+        <Route path="/" element={<TasksView token={token} />} />
+      </Routes>
     </div>
   )
 };
