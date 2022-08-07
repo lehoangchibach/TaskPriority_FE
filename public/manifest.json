@@ -4,8 +4,7 @@
   "icons": [
     {
       "src": "task.ico",
-      "sizes": "16x16",
-      "type": "image/x-icon"
+      "sizes": "16x16"
     }
   ]
 }
