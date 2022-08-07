@@ -11,9 +11,13 @@ const useToken = () => {
     const [token, setToken] = useState(getToken());
 
     const saveToken = (props) => {
+        if (!props) {
+            sessionStorage.clear()
+            setToken(null)
+            return
+        }
         const userToken = props.data
-        sessionStorage.setItem('token', JSON.stringify(userToken));
-        console.log('saveToken', userToken.userName);
+        sessionStorage.setItem('token', JSON.stringify(userToken))
         setToken(userToken);
     };
 

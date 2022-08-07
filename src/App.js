@@ -13,7 +13,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <TasksView token={token} />
+      <TasksView setToken={setToken} />
     </div>
   )
 };

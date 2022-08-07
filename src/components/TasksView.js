@@ -7,13 +7,18 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { getAllTaskByUser, saveTask, createTask, deleteTask } from '../services/TaskAPI';
 import Detail from './Detail';
 import moment from 'moment';
+import ChangeInformation from './changeInformation';
+import useToken from './useToken';
 
 
 
 const TasksView = (props) => {
-    const token = props.token
+    const setToken = props.setToken
+    const { token } = useToken()
     const userName = token.userName
-    const [isVisibleDetail, setIsVisibleDetail] = useState(false);
+    const [isVisibleDetail, setIsVisibleDetail] = useState(false)
+    const [isVisibleCreateTask, setIsVisibleCreateTask] = useState(false)
+    const [isVisibleChangeInformation, setisVisibleChangeInformation] = useState(false)
     const [activeTask, setActiveTask] = useState(null)
     const [items, setItems] = useState({
         'low': [],
@@ -21,13 +26,13 @@ const TasksView = (props) => {
         'high': [],
         'doing': [],
         'done': []
-    });
+    })
     const mouseSensor = useSensor(MouseSensor, {
         // Require the mouse to move by 10 pixels before activating
         activationConstraint: {
             distance: 10,
         },
-    });
+    })
     const touchSensor = useSensor(TouchSensor, {
         // Require the touch to move by 10 pixels before activating
         activationConstraint: {
@@ -43,8 +48,7 @@ const TasksView = (props) => {
         detail: null,
         priority: null,
         taskId: null,
-    });
-    const [isVisibleCreateTask, setIsVisibleCreateTask] = useState(false);
+    })
     const [newTask, setNewTask] = useState({
         owner: userName,
         title: null,
@@ -54,7 +58,7 @@ const TasksView = (props) => {
         detail: null,
         priority: null,
         taskId: null,
-    });
+    })
 
     const getItemsList = useCallback((values) => {
         getAllTaskByUser({ userName: userName }).then(response => {
@@ -250,65 +254,95 @@ const TasksView = (props) => {
         setIsVisibleCreateTask(true)
     }
 
+    const openChangeInformation = () => {
+        setisVisibleChangeInformation(true)
+    }
+
+    const logOut = () => {
+        setToken(null)
+    }
+
 
     return (
         <div style={{
             margin: 'auto',
             border: '1px solid blue',
+            display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
+            alignItems: 'center',
+            padding: '0.5%'
         }}
         >
-            {console.log('render TaskView', token)}
+            <div
+                style={{
+                    alignSelf: 'flex-end',
+                    display: 'flex',
+                    flexDirection: 'column-reverse'
+                }}>
+                <Button type="primary" onClick={openChangeInformation} token={token}>
+                    Hello {token['displayName']}
+                </Button>
+
+                <Button type='danger' onClick={logOut}>Log out</Button>
+            </div>
+
             <Button type="primary" onClick={openCreateTask}>Create Task</Button>
+            <ChangeInformation isVisible={isVisibleChangeInformation} setIsvisible={setisVisibleChangeInformation} setToken={setToken} />
             <Detail isVisible={isVisibleCreateTask} setIsvisible={setIsVisibleCreateTask} task={newTask} setTask={setNewTask} handleSaveTask={handleCreateTask} />
-
             <Detail isVisible={isVisibleDetail} setIsvisible={setIsVisibleDetail} task={task} setTask={setTask} handleSaveTask={handleSaveTask} handleDelete={handleDelete} />
-            <DndContext
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
-                sensors={[mouseSensor, touchSensor]}
+            <div
+                style={{
+                    alignSelf: 'stretch'
+                }}
             >
-                <Row
-                    style={{
-                        justifyContent: 'space-around',
-                        fontWeight: 500,
-                        fontSize: "initial",
-                    }}
+                <DndContext
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    sensors={[mouseSensor, touchSensor]}
                 >
-                    <Col span={4}>Low Priority</Col>
-                    <Col span={4}>Normal Priority</Col>
-                    <Col span={4}>High Priority</Col>
-                    <Col span={4}>Doing</Col>
-                    <Col span={4}>Done</Col>
-                </Row>
-                <Row
-                    style={{
-                        justifyContent: 'space-around',
-                    }}
-                >
-                    <Col span={4}>
-                        <PriorityTab id="low" items={items.low} onClick={openDetail} />
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id="normal" items={items.normal} onClick={openDetail} />
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id="high" items={items.high} onClick={openDetail} />
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id="doing" items={items.doing} onClick={openDetail} />
-                    </Col>
-                    <Col span={4}>
-                        <PriorityTab id="done" items={items.done} onClick={openDetail} />
-                    </Col>
+                    <Row
+                        style={{
+                            justifyContent: 'space-around',
+                            fontWeight: 500,
+                            fontSize: "initial",
+                        }}
+                    >
+                        <Col span={4}>Low Priority</Col>
+                        <Col span={4}>Normal Priority</Col>
+                        <Col span={4}>High Priority</Col>
+                        <Col span={4}>Doing</Col>
+                        <Col span={4}>Done</Col>
+                    </Row>
+                    <Row
+                        style={{
+                            justifyContent: 'space-around',
+                        }}
+                    >
+                        <Col span={4}>
+                            <PriorityTab id="low" items={items.low} onClick={openDetail} />
+                        </Col>
+                        <Col span={4}>
+                            <PriorityTab id="normal" items={items.normal} onClick={openDetail} />
+                        </Col>
+                        <Col span={4}>
+                            <PriorityTab id="high" items={items.high} onClick={openDetail} />
+                        </Col>
+                        <Col span={4}>
+                            <PriorityTab id="doing" items={items.doing} onClick={openDetail} />
+                        </Col>
+                        <Col span={4}>
+                            <PriorityTab id="done" items={items.done} onClick={openDetail} />
+                        </Col>
 
-                </Row >
+                    </Row >
 
 
-                <DragOverlay>{activeTask ? <TaskTag task={activeTask} /> : null}</DragOverlay>
-            </DndContext>
+                    <DragOverlay>{activeTask ? <TaskTag task={activeTask} /> : null}</DragOverlay>
+                </DndContext>
+            </div>
         </div >
     )
 };

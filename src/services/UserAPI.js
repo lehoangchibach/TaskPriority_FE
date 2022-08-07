@@ -14,12 +14,16 @@ export const updateDisplayName = (props) => {
 }
 
 export const changePassword = (props) => {
-    return axios.put(`${server}/user/changePassword`, props.data)
+    const payload = {
+        "userName": props.data.userName,
+        "oldPassword": hash.sha1().update(props.data.oldPassword).digest('hex'),
+        "newPassword": hash.sha1().update(props.data.newPassword).digest('hex'),
+    }
+    return axios.put(`${server}/user/changePassword`, payload)
 }
 
 export const logIn = (props) => {
     const pass = hash.sha1().update(props.data.password).digest('hex')
     props.data.password = pass
-    console.log(pass);
     return axios.post(`${server}/user/logIn`, props.data)
 }
