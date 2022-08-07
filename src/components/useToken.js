@@ -14,7 +14,7 @@ const useToken = () => {
         const userToken = props.data
         sessionStorage.setItem('token', JSON.stringify(userToken));
         console.log('saveToken', userToken.userName);
-        setToken(userToken.userName);
+        setToken(userToken);
     };
 
     return {

@@ -79,10 +79,15 @@ const TasksView = (props) => {
 
     useEffect(() => {
         getItemsList()
-    }, [task, newTask, getItemsList])
+    }, [getItemsList])
 
     const handleCreateTask = (values) => {
         const payload = ({ ...newTask, ...values })
+        // console.log('createTask', payload)
+        setItems((prev) => {
+            prev[payload.priority].push(payload)
+            return prev
+        })
         createTask({ data: payload }).then(() => {
             setNewTask({
                 owner: userName,
@@ -100,11 +105,14 @@ const TasksView = (props) => {
 
     const handleSaveTask = useCallback((values) => {
         const payload = ({ ...task, ...values })
-        // console.log('payload', payload);
-
 
         saveTask({ data: payload }).then(() => {
             setTask(payload)
+        })
+        setItems((prev) => {
+            const index = prev[payload.priority].findIndex((each) => each.taskId === payload.taskId)
+            prev[payload.priority].splice(index, 1, payload)
+            return prev
         })
         setIsVisibleDetail(false)
     }, [task])
@@ -112,6 +120,11 @@ const TasksView = (props) => {
     const handleDelete = () => {
         deleteTask({ taskId: task.taskId }).then(() => {
             setTask(null)
+        })
+        setItems((prev) => {
+            const index = prev[task.priority].findIndex((each) => each.taskId === task.taskId)
+            prev[task.priority].splice(index, 1)
+            return prev
         })
         setIsVisibleDetail(false)
     }
