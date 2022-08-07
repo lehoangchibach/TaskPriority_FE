@@ -100,7 +100,7 @@ const TasksView = (props) => {
 
     const handleSaveTask = useCallback((values) => {
         const payload = ({ ...task, ...values })
-        console.log('payload', payload);
+        // console.log('payload', payload);
 
 
         saveTask({ data: payload }).then(() => {
@@ -228,13 +228,12 @@ const TasksView = (props) => {
         Object.keys(items).forEach(key => {
             items[key].forEach(item => item.taskId === id ? task = item : null)
         })
-        console.log('openDetail', task);
+        // console.log('openDetail', task);
         setTask(task)
         setIsVisibleDetail(true)
     }
 
     const openCreateTask = () => {
-        console.log('userName', token);
         setIsVisibleCreateTask(true)
     }
 

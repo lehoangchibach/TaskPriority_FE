@@ -10,25 +10,22 @@ const Login = (props) => {
 
     const onFinishLogin = (values) => {
         logIn({ data: values }).then(response => {
-            console.log(response.data);
             if (response.data['userName']) {
                 setToken({ data: response.data })
             } else { alert(response.data) }
         })
 
-        setToken({
-            data: {
-                userName: 'testusername',
-                displayName: 'Bach Le'
-            }
-        })
+        // setToken({
+        //     data: {
+        //         userName: 'testusername',
+        //         displayName: 'Bach Le'
+        //     }
+        // })
     };
 
     const onFinishCreateUser = (values) => {
-        console.log(values)
 
         createUser({ data: values }).then(response => {
-            console.log(response.data)
             if (response.data['userName']) {
                 setToken({ data: response.data })
                 setIsLogin(true)
