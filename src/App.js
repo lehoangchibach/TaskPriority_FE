@@ -2,7 +2,6 @@ import React from 'react';
 import './App.css';
 import TasksView from './components/TasksView';
 import Login from './components/Login';
-import { Route, Routes } from 'react-router-dom';
 import useToken from './components/useToken';
 
 const App = () => {
@@ -14,9 +13,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <Routes>
-        <Route path="/" element={<TasksView token={token} />} />
-      </Routes>
+      <TasksView token={token} />
     </div>
   )
 };

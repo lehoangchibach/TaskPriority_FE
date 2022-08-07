@@ -258,6 +258,7 @@ const TasksView = (props) => {
             justifyContent: 'center',
         }}
         >
+            {console.log('render TaskView', token)}
             <Button type="primary" onClick={openCreateTask}>Create Task</Button>
             <Detail isVisible={isVisibleCreateTask} setIsvisible={setIsVisibleCreateTask} task={newTask} setTask={setNewTask} handleSaveTask={handleCreateTask} />
 

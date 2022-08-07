@@ -59,7 +59,7 @@ const Login = (props) => {
                 <span>This is Bach's first website. I know it looks horrible, but I promise to make it more handsome in the future</span>
                 <span>Thank you for sticking around!</span>
                 <h2>Login</h2>
-                <h5>Test account: test - test</h5>
+                <h5>Test account: huyenpham - 123456</h5>
                 <div>
                     <Form
                         name="basic"
