@@ -5,6 +5,7 @@ import hash from "hash.js";
 const server = 'https://taskpriority-be.herokuapp.com'
 
 export const createUser = (props) => {
+    props.data.password = hash.sha1().update(props.data.password).digest('hex')
     return axios.post(`${server}/user/createUser`, props.data)
 }
 

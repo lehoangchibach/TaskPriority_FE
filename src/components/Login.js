@@ -24,11 +24,10 @@ const Login = (props) => {
     };
 
     const onFinishCreateUser = (values) => {
-
         createUser({ data: values }).then(response => {
             if (response.data['userName']) {
                 setToken({ data: response.data })
-                setIsLogin(true)
+                openLogIn(true)
             } else { alert(response.data) }
         })
 

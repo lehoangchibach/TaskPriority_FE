@@ -114,8 +114,9 @@ const TasksView = (props) => {
             setTask(payload)
         })
         setItems((prev) => {
-            const index = prev[payload.priority].findIndex((each) => each.taskId === payload.taskId)
-            prev[payload.priority].splice(index, 1, payload)
+            const index = prev[task.priority].findIndex((each) => each.taskId === payload.taskId)
+            prev[task.priority].splice(index, 1)
+            prev[payload.priority].push(payload)
             return prev
         })
         setIsVisibleDetail(false)
